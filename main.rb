@@ -10,5 +10,6 @@ require 'pycall/import'
 include PyCall::Import
 pyimport :keras
 sgd = Optimizers.sgd
+p Datasets.cifar10
 
 p test.compile(sgd, 'mean_squared_error')

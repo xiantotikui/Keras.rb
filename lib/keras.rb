@@ -4,3 +4,4 @@ include PyCall::Import
 require './lib/keras/model'
 require './lib/keras/core'
 require './lib/keras/optimizers'
+require './lib/keras/datasets'
