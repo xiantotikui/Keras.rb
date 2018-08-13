@@ -1,4 +1,4 @@
-module Optimizers
+module Keras::Optimizers
   extend self
 
   def sgd(learning_rate: 0.01, **args)

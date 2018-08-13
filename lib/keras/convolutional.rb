@@ -1,4 +1,4 @@
-module Convolutional
+module Keras::Convolutional
   extend self
   pyfrom 'keras.layers', import: 'Conv1D'
   pyfrom 'keras.layers', import: 'Conv2D'
@@ -40,39 +40,39 @@ module Convolutional
     Conv2DTranspose.new(filters, kernel_size, **args)
   end
 
-  def cropping1D(cropping = [1, 1], **args)
-    Cropping1D.new(cropping, **args)
+  def cropping1D(cropping: [1, 1], **args)
+    Cropping1D.new(cropping: cropping, **args)
   end
 
-  def cropping2D(cropping = [[0, 0], [0, 0]], **args)
-    Cropping2D.new(cropping, **args)
+  def cropping2D(cropping: [[0, 0], [0, 0]], **args)
+    Cropping2D.new(cropping: cropping, **args)
   end
 
-  def cropping3D(cropping = [[1, 1], [1, 1], [1, 1]], **args)
-    Cropping3D.new(cropping, **args)
+  def cropping3D(cropping: [[1, 1], [1, 1], [1, 1]], **args)
+    Cropping3D.new(cropping: cropping, **args)
   end
 
-  def upsampling1D(size = 2, **args)
-    UpSampling1D.new(size, **args)
+  def upsampling1D(size: 2, **args)
+    UpSampling1D.new(size: size, **args)
   end
 
-  def upsampling2D(size = [2 ,2], **args)
-    UpSampling2D.new(size, **args)
+  def upsampling2D(size: [2 ,2], **args)
+    UpSampling2D.new(size: size, **args)
   end
 
-  def upsampling3D(size = [2 ,2, 2], **args)
-    UpSampling3D.new(size, **args)
+  def upsampling3D(size: [2 ,2, 2], **args)
+    UpSampling3D.new(size: size, **args)
   end
 
-  def zero_padding1D(padding = 1, **args)
-    ZeroPadding1D.new(padding, **args)
+  def zero_padding1D(padding: 1, **args)
+    ZeroPadding1D.new(padding: padding, **args)
   end
 
-  def zero_padding2D(padding = [1, 1], **args)
-    ZeroPadding2D.new(padding, **args)
+  def zero_padding2D(padding: [1, 1], **args)
+    ZeroPadding2D.new(padding: padding, **args)
   end
 
-  def zero_padding3D(padding = [1, 1, 1], **args)
-    ZeroPadding3D.new(padding, **args)
+  def zero_padding3D(padding: [1, 1, 1], **args)
+    ZeroPadding3D.new(padding: padding, **args)
   end
 end

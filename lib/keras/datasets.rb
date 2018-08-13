@@ -1,4 +1,4 @@
-module Datasets
+module Keras::Datasets
   extend self
 
   def cifar10

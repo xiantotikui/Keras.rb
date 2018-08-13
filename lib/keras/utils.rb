@@ -1,4 +1,4 @@
-module Utils
+module Keras::Utils
   extend self
 
   def to_categorical(y, **args)

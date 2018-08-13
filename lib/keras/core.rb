@@ -1,4 +1,4 @@
-module Core
+module Keras::Core
   extend self
   pyfrom 'keras.layers', import: 'Dense'
   pyfrom 'keras.layers', import: 'Activation'
@@ -26,7 +26,7 @@ module Core
   end
 
   def flatten(data_format: nil, **args)
-    Flatten.new(data_format, **args)
+    Flatten.new(data_format: data_format, **args)
   end
 
   def reshape(target_shape, **args)
@@ -45,8 +45,8 @@ module Core
     ActivityRegularization.new(l1, l2, **args)
   end
 
-  def masking(mask_value = 0.0, **args)
-    Masking.new(mask_value, **args)
+  def masking(mask: 0.0, **args)
+    Masking.new(mask_value: mask, **args)
   end
 
   def spatial_dropout1D(rate, **args)
