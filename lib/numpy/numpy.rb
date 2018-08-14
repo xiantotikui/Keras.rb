@@ -29,4 +29,12 @@ module Numpy
   def argmax(x)
     numpy.argmax(x)
   end
+
+  def amax(x)
+    numpy.amax(x)
+  end
+
+  def reshape(a, newshape)
+    numpy.reshape(a, newshape)
+  end
 end
