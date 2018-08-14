@@ -1,42 +1,92 @@
+require 'open-uri'
 require './lib/keras'
 
 python_version('~/miniconda3/bin/python')
 
-array = Keras::Datasets.cifar10
-x_train = array[0][0].astype('float32') / 255
-y_train = Keras::Utils::to_categorical array[0][1], num_classes: 10
-x_test = array[1][0].astype('float32') / 255
-y_test = Keras::Utils::to_categorical array[1][1], num_classes: 10
+keras_import(['Datasets', 'Utils', 'Model', 'Recurrent', 'Core', 'Optimizers'])
+
+text_name = 'pan-tadeusz.txt'
+
+File.open(text_name, "wb") do |file|
+  file.write open('https://wolnelektury.pl/media/book/txt/pan-tadeusz.txt').read
+end
+
+text = File.read(text_name).downcase.chars.to_a
+chars_array = text.uniq
+
+char_indices = Hash.new
+indices_char = Hash.new
+
+chars_array.each.with_index do |ch, idx|
+  char_indices[ch] = idx
+end
+
+chars_array.each.with_index do |ch, idx|
+  indices_char[idx] = ch
+end
+
+maxlen = 40
+step = 3
+sentences = []
+next_chars = []
+
+i = 0
+while i < text.size - maxlen
+  sentences << text[i...(i + maxlen)]
+  next_chars << text[i + maxlen]
+  i += step
+end
+
+x = []
+y = []
+
+i = 0
+while i < 20000
+  x[i] = []
+  j = 0
+  while j < sentences[i].size
+    x[i][j] = Array.new(indices_char.size).fill(0)
+    x[i][j][char_indices[sentences[i][j]]] = 1
+    j += 1
+  end
+  y[i] = Array.new(indices_char.size).fill(0)
+  y[i][char_indices[next_chars[i]]] = 1
+  i += 1
+end
 
 model = Keras::Model.sequential
-model.add(Keras::Convolutional.conv2D(32, [3, 3], padding: 'same', input_shape: x_train[0].shape))
-model.add(Keras::Core.activation('relu'))
-model.add(Keras::Convolutional.conv2D(32, [3, 3]))
-model.add(Keras::Core.activation('relu'))
-model.add(Keras::Pooling.max_pooling2D(pool_size: [2, 2]))
-model.add(Keras::Core.dropout(0.25))
-
-model.add(Keras::Convolutional.conv2D(64, [3, 3], padding: 'same'))
-model.add(Keras::Core.activation('relu'))
-model.add(Keras::Convolutional.conv2D(64, [3, 3], padding: 'same'))
-model.add(Keras::Core.activation('relu'))
-model.add(Keras::Pooling.max_pooling2D(pool_size: [2, 2]))
-model.add(Keras::Core.dropout(0.25))
-
-model.add(Keras::Core.flatten())
-model.add(Keras::Core.dense(512))
-model.add(Keras::Core.activation('relu'))
-model.add(Keras::Core.dropout(0.5))
-model.add(Keras::Core.dense(10))
+model.add(Keras::Recurrent.lstm(128, input_shape: [maxlen, chars_array.size]))
+model.add(Keras::Core.dense(chars_array.size))
 model.add(Keras::Core.activation('softmax'))
 
-opt = Keras::Optimizers.rmsprop(lr: 0.0001, decay: (10**-6).to_f)
-model.compile(loss: 'categorical_crossentropy', optimizer: opt, metrics: ['accuracy'])
+optimizer = Keras::Optimizers.rmsprop(lr: 0.01)
+model.compile(loss: 'categorical_crossentropy', optimizer: optimizer)
+model.fit(Numpy.array(x), Numpy.array(y), batch_size: 128, epochs: 60)
 
-model.fit(x_train, y_train, batch_size: 32, epochs: 1, validation_data: [x_test, y_test], shuffle: true)
+start_index = Random.rand(0...(text.size - maxlen))
+sentence = text[start_index...(start_index + maxlen)]
+x_pred = []
+generated = ''
+i = 0
+while i < 400
+  x_pred[0] = []
+  j = 0
+  while j < maxlen
+    x_pred[0][j] = Array.new(indices_char.size).fill(0)
+    x_pred[0][j][char_indices[sentence[j]]] = 1
+    j += 1
+  end
+  preds = model.predict(Numpy.array(x_pred), verbose: 0)[0]
+  preds = Numpy.asarray(preds).astype('float64')
+  preds = Numpy.log(preds)
+  exp_preds = Numpy.exp(preds)
+  preds = exp_preds / Numpy.sum(exp_preds)
+  probas = Numpy.multinomial(1, preds, 1)
+  next_index = Numpy.argmax(probas)
+  next_char = indices_char[next_index.to_i]
+  sentence = sentence[1..maxlen] + [next_char]
+  generated << next_char
+  i += 1
+end
 
-model.save('keras_cifar10_trained_model.h5')
-
-scores = model.evaluate(x_test, y_test, verbose: 1)
-puts 'Test loss:' + scores[0].to_s
-puts 'Test accuracy:' + scores[1].to_s
+puts generated

@@ -5,7 +5,6 @@ module Keras::AdvancedActivations
   pyfrom 'keras.layers', import: 'ELU'
   pyfrom 'keras.layers', import: 'ThresholdedReLU'
   pyfrom 'keras.layers', import: 'Softmax'
-  pyfrom 'keras.layers', import: 'ReLU'
 
   def leakyrelu(alpha: 0.3, **args)
     LeakyReLU.new(alpha: alpha, **args)
@@ -25,9 +24,5 @@ module Keras::AdvancedActivations
 
   def softmax(axis: -1.0, **args)
     Softmax.new(axis: axis, **args)
-  end
-
-  def relu(max_value: nil, **args)
-    ReLU.new(max_value: max_value, **args)
   end
 end
