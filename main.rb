@@ -30,7 +30,7 @@ model.add(Keras::Core.dropout(0.5))
 model.add(Keras::Core.dense(10))
 model.add(Keras::Core.activation('softmax'))
 
-opt = Keras::Optimizers.rmsprop(learning_rate: 0.0001, decay: (10**-6).to_f)
+opt = Keras::Optimizers.rmsprop(lr: 0.0001, decay: (10**-6).to_f)
 model.compile(loss: 'categorical_crossentropy', optimizer: opt, metrics: ['accuracy'])
 
 model.fit(x_train, y_train, batch_size: 32, epochs: 1, validation_data: [x_test, y_test], shuffle: true)
