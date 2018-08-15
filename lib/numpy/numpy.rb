@@ -37,4 +37,8 @@ module Numpy
   def reshape(a, newshape)
     numpy.reshape(a, newshape)
   end
+
+  def zeros(x)
+    numpy.zeros(x)
+  end
 end
