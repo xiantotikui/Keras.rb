@@ -1,4 +1,4 @@
-module Keras::Model
+module Keras::Models
   extend self
   pyfrom 'keras.models', import: 'Sequential'
   pyfrom 'keras.models', import: 'Model'

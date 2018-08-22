@@ -1,17 +1,12 @@
 require 'pycall/import'
 include PyCall::Import
 
-PyCall.init 'python'
-def python_version(path)
-  PyCall.init(path)
-end
-
 module Keras; end
 
 require './lib/numpy/numpy'
 
 def keras_import(modules)
-  require './lib/keras/model' if modules.include? 'Model'
+  require './lib/keras/models' if modules.include? 'Models'
   require './lib/keras/core' if modules.include? 'Core'
   require './lib/keras/optimizers' if modules.include? 'Optimizers'
   require './lib/keras/datasets' if modules.include? 'Datasets'

@@ -3,162 +3,171 @@ include PyCall::Import
 
 require './lib/keras'
 
-python_version('~/miniconda3/bin/python')
-
-keras_import(['Model', 'Convolutional', 'Core', 'Optimizers'])
-
-class Environment
-  attr_reader :state, :action
-
-  def initialize
-    pyimport :gym
-    @env = gym.make 'CartPole-v0'
-    states = @env.observation_space.shape[0]
-    actions = @env.action_space.n
-    @agent = Agent.new(states, actions)
-  end
-
-  def run
-    @steps = 0
-    @agent.epsilon = 1.0
-    state = @env.reset
-    done = false
-    while !done
-      @env.render
-      action = @agent.act(state)
-      array = @env.step(action)
-      next_state = array[0]
-      reward = array[1]
-      done = array[2]
-
-      @agent.observe [state, action, reward, next_state]
-      @agent.replay
-
-      state = next_state
-      @steps += 1
-    end
-
-    puts 'Total reward: ' + @steps.to_s
-  end
-end
-
-class Agent
-  attr_writer :epsilon
-  attr_reader :state
-
-  def initialize(states, actions)
-    @states = states
-    @actions = actions
-    @batch_size = 64
-
-    @epsilon = 1.0
-    @min_epsilon = 0.01
-    @epsilon_decay = 0.995
-
-    @gamma = 0.95
-
-    @brain = Brain.new(@states, @actions, @batch_size)
-  end
-
-  def act(state)
-    if Random.rand(0.0..1.0) <= @epsilon
-      @state = Random.rand(0...@actions)
-    else
-      @state = Numpy.argmax @brain.predict state
-    end
-  end
-
-  def observe(sample)
-    @brain.write_memory sample
-    @epsilon *= @epsilon_decay
-  end
-
-  def replay
-    batch = @brain.read_memory
-    zero_state = Numpy.zeros(@states)
-
-    batch.size.times do |t|
-      state = batch[t][0]
-      action = batch[t][1]
-      reward = batch[t][2]
-      if batch[t][3].nil?
-        next_state = zero_state
-      else
-        next_state = batch[t][3]
-      end
-      predicted_state = @brain.predict(state)
-      predicted_next_state = @brain.predict(next_state)
-
-      target = predicted_state
-
-      if next_state.nil?
-        target[action] = reward
-      else
-        target[action] = reward + @gamma * Numpy.amax(predicted_next_state)
-      end
-
-      @brain.train(Numpy.reshape(state, [1, @states]), Numpy.reshape(target, [1, @actions]))
-    end
-  end
-end
+keras_import(['Models', 'Core', 'Optimizers'])
 
 class Brain
-  def initialize(states, actions, batch_size)
-    @batch_size = batch_size
+  attr_reader :model
+  attr_accessor :target_model
 
+  def initialize(states, actions, lr)
     @states = states
     @actions = actions
-
-    @memory = Memory.new(200)
-    @model = build_model
+    @lr = lr
+    @model = network
+    @target_model = network
   end
 
-  def build_model
-    model = Keras::Model.sequential
-    model.add Keras::Core.dense 64, activation: 'relu', input_dim: @states
-    model.add Keras::Core.dense @actions, activation: 'linear'
-    model.compile loss: 'mse', optimizer: Keras::Optimizers.adam(lr: 0.0005, clipvalue: 1.0)
-    model
+  def train(state, action)
+    @model.fit(state, action, verbose: 0, epochs: 1)
   end
 
   def predict(state)
-    (@model.predict Numpy.reshape(state, [1, @states])).flatten
+    @target_model.predict(state)
   end
 
-  def train(x, y)
-    @model.fit x, y, batch_size: @batch_size, epochs: 1, verbose: 0
-  end
-
-  def read_memory
-    @memory.sampl @batch_size
-  end
-
-  def write_memory(sample)
-    @memory.add sample
+  private
+  def network
+    model = Keras::Models.sequential
+    model.add Keras::Core.dense(24, activation: 'relu', input_dim: @states)
+    model.add Keras::Core.dense(48, activation: 'relu')
+    model.add Keras::Core.dense(@actions, activation: 'relu')
+    opt = Keras::Optimizers.adam(lr: @lr)
+    model.compile(optimizer: opt, loss: 'mse')
+    model
   end
 end
 
 class Memory
-  def initialize(capacity)
-    @capacity = capacity
+  attr_reader :memory
+
+  def initialize(max_memory)
+    @max_memory = max_memory
+
     @memory = []
   end
 
-  def add(array)
-    @memory << array
-    @memory.shift if @memory.size > @capacity
+  def write_memory(elements)
+    @memory << elements
+    @memory.shift if @memory.size > @max_memory
   end
 
-  def sampl(n)
-    @memory.sample(n)
+  def read_memory(batch_size)
+    @memory.sample(batch_size)
   end
 end
 
-environment = Environment.new
+class Agent
+  attr_reader :epsilon
 
-i = 0
-while i < 1000
-  puts 'Step: ' + i.to_s
-  environment.run
-  i += 1
+  def initialize(states, actions)
+    @states = states
+    @actions = actions
+
+    @batch_size = 32
+    @gamma = 0.95
+    @epsilon = 1.0
+    @epsilon_decay = 0.999
+
+    lr = 0.00025
+
+    @brain = Brain.new(@states, @actions, lr)
+    @memory = Memory.new(2000)
+  end
+
+  def act(state)
+    @epsilon *= @epsilon_decay
+    if Random.rand(0.0..1.0) > @epsilon
+      return Random.rand(0...@actions)
+    else
+      return Numpy.argmax @brain.predict(state)
+    end
+  end
+
+  def remember(elements)
+    @memory.write_memory(elements)
+  end
+
+  def replay(finish)
+    return if @memory.memory.size < @batch_size
+
+    batch = @memory.read_memory(@batch_size)
+    reward = 0
+    i = 0
+    while i < batch.size
+      cur_state = batch[i][0]
+      action = batch[i][1]
+      reward = batch[i][2]
+      new_state = batch[i][3]
+      done = batch[i][4]
+
+      cur_predict = @brain.predict(cur_state)[0]
+      next_predict = @brain.predict(new_state)[0]
+
+      reward += @gamma * Numpy.argmax(next_predict)
+
+      cur_predict[action] = reward
+
+      cur_predict = Numpy.reshape(cur_predict, [1, @actions])
+      next_predict = Numpy.reshape(next_predict, [1, @actions])
+
+      @brain.train(cur_state, next_predict)
+
+      break if finish
+
+      i += 1
+    end
+  end
+
+  def update_weights
+    @brain.target_model.set_weights(@brain.model.get_weights)
+    puts 'weights updated'
+  end
 end
+
+class Environment
+  attr_reader :states, :actions
+
+  def initialize(problem)
+    pyimport :gym
+    @env = gym.make(problem)
+    @states = @env.observation_space.shape[0]
+    @actions = @env.action_space.n
+  end
+
+  def run(agent)
+    10000.times do |t|
+      state = @env.reset
+      action = @env.action_space.sample
+      total_reward = 0
+      while true
+        @env.render
+
+        state = Numpy.reshape(state, [1, @states])
+
+        action = agent.act(state)
+        step = @env.step(action)
+
+        new_state = Numpy.reshape(step[0], [1, @states])
+        reward = step[1]
+        done = step[2]
+
+        agent.remember([state, action, reward, new_state, done])
+        agent.replay(done)
+
+        state = new_state
+        total_reward += 1
+
+        break if done
+      end
+
+      agent.update_weights if t % 200 == 0
+
+      puts 'Step: ' + t.to_s + ', total reward: ' + total_reward.to_s + ', epsilon: ' + agent.epsilon.to_s
+    end
+  end
+end
+
+problem = 'CartPole-v0'
+env = Environment.new(problem)
+agent = Agent.new(env.states, env.actions)
+env.run(agent)

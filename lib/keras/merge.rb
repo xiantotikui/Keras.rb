@@ -1,43 +1,43 @@
 module Keras::Merge
   extend self
-  pyfrom 'keras.layers', import: 'Add'
-  pyfrom 'keras.layers', import: 'Subtract'
-  pyfrom 'keras.layers', import: 'Multiply'
-  pyfrom 'keras.layers', import: 'Average'
-  pyfrom 'keras.layers', import: 'Maximum'
-  pyfrom 'keras.layers', import: 'Minimum'
-  pyfrom 'keras.layers', import: 'Concatenate'
-  pyfrom 'keras.layers', import: 'Dot'
+  pyfrom 'keras.layers', import: 'add'
+  pyfrom 'keras.layers', import: 'subtract'
+  pyfrom 'keras.layers', import: 'multiply'
+  pyfrom 'keras.layers', import: 'average'
+  pyfrom 'keras.layers', import: 'maximum'
+  pyfrom 'keras.layers', import: 'minimum'
+  pyfrom 'keras.layers', import: 'concatenate'
+  pyfrom 'keras.layers', import: 'dot'
 
   def add(inputs, **args)
-    Add.new(inputs, **args)
+    add(inputs, **args)
   end
 
   def subtract(inputs, **args)
-    Subtract.new(inputs, **args)
+    subtract(inputs, **args)
   end
 
   def multiply(inputs, **args)
-    Multiply.new(inputs, **args)
+    multiply(inputs, **args)
   end
 
   def average(inputs, **args)
-    Average.new(inputs, **args)
+    average(inputs, **args)
   end
 
   def maximum(inputs, **args)
-    Maximum.new(inputs, **args)
+    maximum(inputs, **args)
   end
 
   def minimum(inputs, **args)
-    Minimum.new(inputs, **args)
+    minimum(inputs, **args)
   end
 
   def concatenate(inputs, **args)
-    Concatenate.new(inputs, **args)
+    concatenate(inputs, **args)
   end
 
   def dot(inputs, **args)
-    Dot.new(inputs, **args)
+    dot(inputs, **args)
   end
 end

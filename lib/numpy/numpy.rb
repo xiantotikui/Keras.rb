@@ -41,4 +41,12 @@ module Numpy
   def zeros(x)
     numpy.zeros(x)
   end
+
+  def concatenate(x)
+    numpy.concatenate(x)
+  end
+
+  def append(x0, *x1)
+    numpy.append(x0, *x1)
+  end
 end
