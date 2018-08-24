@@ -30,6 +30,10 @@ module Numpy
     numpy.argmax(x)
   end
 
+  def argmin(x)
+    numpy.argmin(x)
+  end
+
   def amax(x)
     numpy.amax(x)
   end
